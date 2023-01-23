@@ -3,10 +3,10 @@ class RegexEngine:
         self.test = test
         self.pattern = pattern
         self.regex = self.makeRegex()
-        return self.match(len(self.regex)-1, len(self.test)-1, -1) and self.match()
+        return self.match(len(self.regex)-1, len(self.test)-1, True) and self.match()
 
-    def makeRegex(self):
-        regex = []
+    def makeRegex(self) -> list["Rex"]:
+        regex: list["Rex"] = []
         for ch in self.pattern:
             if ch == "*":
                 regex[-1].star = True
@@ -14,36 +14,39 @@ class RegexEngine:
                 regex.append(Rex(ch))
         return regex
 
-    def endOfRegex(self, ir, x):
-        if x > 0:
-            return all(map(lambda y: y.star, self.regex[ir:]))
-        else:
-            return all(map(lambda y: y.star, self.regex[:ir+1]))
+    def endOfRegex(self, irx: int, back: bool) -> bool:
+        if back:
+            return all(map(lambda rex: rex.star, self.regex[:irx+1]))
+        return all(map(lambda rex: rex.star, self.regex[irx:]))
 
-    def match(self, ir = 0, it = 0, x=1):
-        if not 0 <= it < len(self.test) and (not 0 <= ir < len(self.regex) or self.endOfRegex(ir, x)):
+    def match(self, irx: int = 0, itx: int = 0, back: bool = False) -> bool:
+        if not (0 <= itx < len(self.test) or 0 <= irx < len(self.regex)): 
             return True
-        if not 0 <= it < len(self.test) or not 0 <= ir < len(self.regex):
+        if not 0 <= itx < len(self.test) and self.endOfRegex(irx, back):
+            return True
+        if not (0 <= itx < len(self.test) and 0 <= irx < len(self.regex)):
             return False
 
-        if self.regex[ir].star:
-            if self.match(ir+x, it, x):
+        change = -1 if back else 1
+
+        if self.regex[irx].star:
+            if self.match(irx + change, itx, back):
                 return True
-            if self.matchChar(ir, it):
-                if self.match(ir, it+x, x):
+            if self.matchChar(irx, itx):
+                if self.match(irx, itx + change, back):
                     return True
-                if self.match(ir+x, it+x, x):
+                if self.match(irx + change, itx + change, back):
                     return True
-        elif self.matchChar(ir, it):
-            if self.match(ir+x, it+x, x):
+        elif self.matchChar(irx, itx):
+            if self.match(irx + change, itx + change, back):
                 return True
         return False
 
-    def matchChar(self, ir, it):
-        return self.regex[ir].char == "." or self.regex[ir].char == self.test[it]
+    def matchChar(self, irx: int, itx: int) -> bool:
+        return self.regex[irx].char == "." or self.regex[irx].char == self.test[itx]
 
 class Rex:
-    def __init__(self, character):
+    def __init__(self, character: str) -> None:
         self.char = character
         self.star = False
 
